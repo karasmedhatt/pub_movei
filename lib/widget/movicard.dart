@@ -2,10 +2,12 @@ import 'package:best_movei/constants/details.dart';
 import 'package:best_movei/models/movie.dart';
 import 'package:best_movei/view/detailscreen.dart';
 import 'package:best_movei/viewModel/themeprovider.dart';
+import 'package:best_movei/widget/textcolors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
+
 
 import 'package:shimmer/shimmer.dart';
 
@@ -13,10 +15,11 @@ class MovieCard extends StatelessWidget {
   final Movie model;
   final VoidCallback? onFavoriteTap;
 
-  const MovieCard({super.key, required this.model, this.onFavoriteTap});
-
+   MovieCard({super.key, required this.model, this.onFavoriteTap});
+  
   @override
   Widget build(BuildContext context) {
+      final themeProvider = context.watch<ThemeProvider>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       child: Row(
@@ -24,37 +27,41 @@ class MovieCard extends StatelessWidget {
         children: [
           (model.posterPath == null || model.posterPath!.isEmpty)
               ? const Icon(Icons.broken_image, size: 100)
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MovieDetailsScreen(movie: model),
+              :  Hero(
+                transitionOnUserGestures:true ,
+                tag:model.id,
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MovieDetailsScreen(movie: model),
+                          ),
+                        );
+                      },
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://image.tmdb.org/t/p/w500${model.posterPath}',
+                        width: 100,
+                        height: 150,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor:TextColors.darkText,
+                          highlightColor:TextColors.darkText,
+                          child: Container(
+                            width: 100,
+                            height: 150,
+                            color:TextColors.darkText,
+                          ),
                         ),
-                      );
-                    },
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          'https://image.tmdb.org/t/p/w500${model.posterPath}',
-                      width: 100,
-                      height: 150,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(
-                          width: 100,
-                          height: 150,
-                          color: Colors.grey,
-                        ),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.broken_image, size: 100),
                       ),
-                      errorWidget: (context, url, error) =>
-                          const Icon(Icons.broken_image, size: 100),
                     ),
                   ),
-                ),
+              ),
           const Gap(9),
           Expanded(
             child: Column(
@@ -86,8 +93,10 @@ class MovieCard extends StatelessWidget {
                     final name = GenreHelper.genreMap[id] ?? 'Unknown';
                     return Text(
                       name,
-                      style: const TextStyle(
-                        color: Color.fromARGB(221, 188, 188, 188),
+                      style: TextStyle(
+                      color: themeProvider.isDark
+                    ? TextColors.darkText
+                    : TextColors.lightText,
                       ),
                     );
                   }).toList(),

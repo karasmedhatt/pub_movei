@@ -1,13 +1,12 @@
 import 'package:best_movei/models/movie.dart';
-import 'package:best_movei/services/api_services.dart';
 import 'package:best_movei/view/favorit.dart';
 import 'package:best_movei/viewModel/app_Prain.dart';
 import 'package:best_movei/viewModel/themeprovider.dart';
 import 'package:best_movei/widget/movicard.dart';
 import 'package:best_movei/widget/shimmer.dart';
+import 'package:best_movei/widget/textcolors.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,20 +17,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    ApiServices.fetchMovies();
+
+    _scrollController.addListener(() {
+      final pos = _scrollController.position.pixels;
+      final max = _scrollController.position.maxScrollExtent;
+      if (pos >= max - 150) {
+        if (appBrain.hasMore && !appBrain.isLoading.value) {
+          appBrain.fetchNextPage(); 
+        }
+      }
+    });
+    appBrain.fetchInitialMovies();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: Row(
             children: [
-              const Text("Popular Movies"),
+              const Text("Movies"),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(top: 7.0),
@@ -66,8 +85,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: Text(
                               favs.favorites.length.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: themeProvider.isDark
+                                    ? TextColors.darkText
+                                    : TextColors.lightText,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -99,11 +120,12 @@ class _HomeScreenState extends State<HomeScreen> {
             final itemCount = movies.isEmpty ? 5 : movies.length;
 
             return ListView.builder(
+              controller: _scrollController,
               itemCount: itemCount,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemBuilder: (context, index) {
                 if (movies.isEmpty) {
-                  return const MovieCardShimmer(); 
+                  return const MovieCardShimmer();
                 } else {
                   return MovieCard(model: movies[index]);
                 }
